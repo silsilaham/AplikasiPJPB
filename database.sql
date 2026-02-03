@@ -26,22 +26,22 @@ CREATE INDEX IF NOT EXISTS idx_products_code ON products(code);
 -- Enable Row Level Security
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
-CREATE POLICY "Users can view their own products" 
+-- RLS Policies (Shared Access for Authenticated Users)
+CREATE POLICY "Authenticated users can view all products" 
     ON products FOR SELECT 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can insert their own products" 
+CREATE POLICY "Authenticated users can insert products" 
     ON products FOR INSERT 
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can update their own products" 
+CREATE POLICY "Authenticated users can update products" 
     ON products FOR UPDATE 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can delete their own products" 
+CREATE POLICY "Authenticated users can delete products" 
     ON products FOR DELETE 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
 -- ============================================
 -- CUSTOMERS TABLE
@@ -62,21 +62,21 @@ CREATE INDEX IF NOT EXISTS idx_customers_code ON customers(code);
 
 ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own customers" 
+CREATE POLICY "Authenticated users can view all customers" 
     ON customers FOR SELECT 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can insert their own customers" 
+CREATE POLICY "Authenticated users can insert customers" 
     ON customers FOR INSERT 
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can update their own customers" 
+CREATE POLICY "Authenticated users can update customers" 
     ON customers FOR UPDATE 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can delete their own customers" 
+CREATE POLICY "Authenticated users can delete customers" 
     ON customers FOR DELETE 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
 -- ============================================
 -- SUPPLIERS TABLE
@@ -97,21 +97,21 @@ CREATE INDEX IF NOT EXISTS idx_suppliers_code ON suppliers(code);
 
 ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own suppliers" 
+CREATE POLICY "Authenticated users can view all suppliers" 
     ON suppliers FOR SELECT 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can insert their own suppliers" 
+CREATE POLICY "Authenticated users can insert suppliers" 
     ON suppliers FOR INSERT 
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can update their own suppliers" 
+CREATE POLICY "Authenticated users can update suppliers" 
     ON suppliers FOR UPDATE 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can delete their own suppliers" 
+CREATE POLICY "Authenticated users can delete suppliers" 
     ON suppliers FOR DELETE 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
 -- ============================================
 -- SALES TABLE
@@ -133,21 +133,21 @@ CREATE INDEX IF NOT EXISTS idx_sales_invoice_no ON sales(invoice_no);
 
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own sales" 
+CREATE POLICY "Authenticated users can view all sales" 
     ON sales FOR SELECT 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can insert their own sales" 
+CREATE POLICY "Authenticated users can insert sales" 
     ON sales FOR INSERT 
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can update their own sales" 
+CREATE POLICY "Authenticated users can update sales" 
     ON sales FOR UPDATE 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can delete their own sales" 
+CREATE POLICY "Authenticated users can delete sales" 
     ON sales FOR DELETE 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
 -- ============================================
 -- SALE ITEMS TABLE
@@ -167,46 +167,22 @@ CREATE INDEX IF NOT EXISTS idx_sale_items_product_id ON sale_items(product_id);
 
 ALTER TABLE sale_items ENABLE ROW LEVEL SECURITY;
 
--- RLS for sale_items: Allow access if user owns the parent sale
-CREATE POLICY "Users can view sale items of their own sales" 
+-- RLS for sale_items: Allow all authenticated users to manage items
+CREATE POLICY "Authenticated users can view all sale items" 
     ON sale_items FOR SELECT 
-    USING (
-        EXISTS (
-            SELECT 1 FROM sales 
-            WHERE sales.id = sale_items.sale_id 
-            AND sales.user_id = auth.uid()
-        )
-    );
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can insert sale items for their own sales" 
+CREATE POLICY "Authenticated users can insert sale items" 
     ON sale_items FOR INSERT 
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM sales 
-            WHERE sales.id = sale_items.sale_id 
-            AND sales.user_id = auth.uid()
-        )
-    );
+    WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can update sale items of their own sales" 
+CREATE POLICY "Authenticated users can update sale items" 
     ON sale_items FOR UPDATE 
-    USING (
-        EXISTS (
-            SELECT 1 FROM sales 
-            WHERE sales.id = sale_items.sale_id 
-            AND sales.user_id = auth.uid()
-        )
-    );
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can delete sale items of their own sales" 
+CREATE POLICY "Authenticated users can delete sale items" 
     ON sale_items FOR DELETE 
-    USING (
-        EXISTS (
-            SELECT 1 FROM sales 
-            WHERE sales.id = sale_items.sale_id 
-            AND sales.user_id = auth.uid()
-        )
-    );
+    USING (auth.role() = 'authenticated');
 
 -- ============================================
 -- PURCHASES TABLE
@@ -228,21 +204,21 @@ CREATE INDEX IF NOT EXISTS idx_purchases_invoice_no ON purchases(invoice_no);
 
 ALTER TABLE purchases ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own purchases" 
+CREATE POLICY "Authenticated users can view all purchases" 
     ON purchases FOR SELECT 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can insert their own purchases" 
+CREATE POLICY "Authenticated users can insert purchases" 
     ON purchases FOR INSERT 
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can update their own purchases" 
+CREATE POLICY "Authenticated users can update purchases" 
     ON purchases FOR UPDATE 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can delete their own purchases" 
+CREATE POLICY "Authenticated users can delete purchases" 
     ON purchases FOR DELETE 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
 -- ============================================
 -- PURCHASE ITEMS TABLE
@@ -262,45 +238,21 @@ CREATE INDEX IF NOT EXISTS idx_purchase_items_product_id ON purchase_items(produ
 
 ALTER TABLE purchase_items ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view purchase items of their own purchases" 
+CREATE POLICY "Authenticated users can view all purchase items" 
     ON purchase_items FOR SELECT 
-    USING (
-        EXISTS (
-            SELECT 1 FROM purchases 
-            WHERE purchases.id = purchase_items.purchase_id 
-            AND purchases.user_id = auth.uid()
-        )
-    );
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can insert purchase items for their own purchases" 
+CREATE POLICY "Authenticated users can insert purchase items" 
     ON purchase_items FOR INSERT 
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM purchases 
-            WHERE purchases.id = purchase_items.purchase_id 
-            AND purchases.user_id = auth.uid()
-        )
-    );
+    WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can update purchase items of their own purchases" 
+CREATE POLICY "Authenticated users can update purchase items" 
     ON purchase_items FOR UPDATE 
-    USING (
-        EXISTS (
-            SELECT 1 FROM purchases 
-            WHERE purchases.id = purchase_items.purchase_id 
-            AND purchases.user_id = auth.uid()
-        )
-    );
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can delete purchase items of their own purchases" 
+CREATE POLICY "Authenticated users can delete purchase items" 
     ON purchase_items FOR DELETE 
-    USING (
-        EXISTS (
-            SELECT 1 FROM purchases 
-            WHERE purchases.id = purchase_items.purchase_id 
-            AND purchases.user_id = auth.uid()
-        )
-    );
+    USING (auth.role() = 'authenticated');
 
 -- ============================================
 -- JOURNALS TABLE (General Journal)
@@ -324,21 +276,21 @@ CREATE INDEX IF NOT EXISTS idx_journals_reference ON journals(reference_type, re
 
 ALTER TABLE journals ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own journals" 
+CREATE POLICY "Authenticated users can view all journals" 
     ON journals FOR SELECT 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can insert their own journals" 
+CREATE POLICY "Authenticated users can insert journals" 
     ON journals FOR INSERT 
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can update their own journals" 
+CREATE POLICY "Authenticated users can update journals" 
     ON journals FOR UPDATE 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can delete their own journals" 
+CREATE POLICY "Authenticated users can delete journals" 
     ON journals FOR DELETE 
-    USING (auth.uid() = user_id);
+    USING (auth.role() = 'authenticated');
 
 -- ============================================
 -- TRIGGERS FOR UPDATED_AT
