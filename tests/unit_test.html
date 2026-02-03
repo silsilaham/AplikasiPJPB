@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Unit Test: Registration Logic</title>
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        body { font-family: sans-serif; padding: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Registration Logic Unit Tests</h1>
+    <div id="results"></div>
+
+    <script>
+        // Mock DOM
+        const mockDOM = {
+            'registerEmail': { value: 'test@example.com' },
+            'registerPassword': { value: 'password123' },
+            'registerPasswordConfirm': { value: 'password123' },
+            'registerBtn': { disabled: false, innerHTML: '' },
+            'authMessage': { style: {}, textContent: '', className: '' },
+            'loginForm': { classList: { remove: () => {}, add: () => {} } },
+            'registerForm': { classList: { remove: () => {}, add: () => {} } }
+        };
+
+        // Helper to reset mocks
+        function resetMocks() {
+            mockDOM.registerEmail.value = 'test@example.com';
+            mockDOM.registerPassword.value = 'password123';
+            mockDOM.registerPasswordConfirm.value = 'password123';
+        }
+
+        document.getElementById = (id) => mockDOM[id] || { style: {}, classList: { add:()=>{}, remove:()=>{} } };
+        document.querySelectorAll = (sel) => [ { classList: { add:()=>{}, remove:()=>{} } }, { classList: { add:()=>{}, remove:()=>{} } } ];
+
+        // Mock Supabase
+        const mockSupabase = {
+            auth: {
+                signUp: async ({ email, password }) => {
+                    console.log(`Mock SignUp: ${email}`);
+                    if (email === 'fail@test.com') return { data: null, error: { message: 'Mock Error' } };
+                    return { data: { user: { id: 1 }, session: null }, error: null };
+                }
+            }
+        };
+
+        // Mock Global
+        window.supabaseClient = mockSupabase;
+
+        // Mock UI functions
+        window.showMessage = (type, msg) => console.log(`Msg: ${msg}`);
+        window.switchAuthTab = (tab) => console.log(`Tab: ${tab}`);
+
+        // Logic under test (simplified adaptation of app.js handleRegister)
+        async function handleRegister(e) {
+            if(e) e.preventDefault();
+            
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerPasswordConfirm').value;
+            
+            if (password !== confirmPassword) return 'Password mismatch';
+
+            try {
+                const { data, error } = await window.supabaseClient.auth.signUp({ email, password });
+                if (error) throw error;
+                return 'Success';
+            } catch (err) {
+                return err.message;
+            }
+        }
+
+        // Test Runner
+        async function runTests() {
+            const results = document.getElementById('results');
+            const log = (msg, success) => {
+                results.innerHTML += `<div class="${success ? 'pass' : 'fail'}">${success ? '✓' : '✗'} ${msg}</div>`;
+            };
+
+            try {
+                // Test 1
+                resetMocks();
+                const res1 = await handleRegister(null);
+                log('Test 1: Successful Registration returns Success', res1 === 'Success');
+
+                // Test 2
+                resetMocks();
+                mockDOM.registerPasswordConfirm.value = 'wrongpass';
+                const res2 = await handleRegister(null);
+                log('Test 2: Password Mismatch returns error string', res2 === 'Password mismatch');
+
+                // Test 3
+                resetMocks();
+                mockDOM.registerEmail.value = 'fail@test.com';
+                const res3 = await handleRegister(null);
+                log('Test 3: API Error returns error message', res3 === 'Mock Error');
+
+            } catch (e) {
+                log('Critical Test Error: ' + e.message, false);
+            }
+        }
+
+        window.onload = runTests;
+    </script>
+</body>
+</html>

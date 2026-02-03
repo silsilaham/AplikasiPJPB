@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Integration Test: App Loading</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .hidden { display: none; }
+    </style>
+    <!-- Mock Supabase Library -->
+    <script>
+        window.supabase = {
+            createClient: (url, key) => ({
+                auth: {
+                    getSession: () => Promise.resolve({ data: { session: null } }),
+                    onAuthStateChange: () => {},
+                    signUp: () => Promise.resolve({ data: {}, error: null }),
+                    signInWithPassword: () => Promise.resolve({ data: {}, error: null }),
+                    signOut: () => Promise.resolve()
+                },
+                from: () => ({ 
+                    select: () => ({ 
+                        order: () => Promise.resolve({ data: [], error: null }),
+                        eq: () => ({ single: () => Promise.resolve({data:{}, error:null}) })
+                    }) 
+                })
+            })
+        };
+    </script>
+</head>
+<body>
+    <h1>Integration Test</h1>
+    <div id="status">Loading app.js...</div>
+
+    <!-- Required DOM Elements for app.js -->
+    <div id="loginScreen" class="login-container">
+        <form id="loginForm">
+            <input id="loginEmail" value="user@test.com">
+            <input id="loginPassword" value="pass">
+            <button id="loginBtn">Login</button>
+        </form>
+        <form id="registerForm" class="hidden">
+            <input id="registerEmail" value="new@test.com">
+            <input id="registerPassword" value="pass123">
+            <input id="registerPasswordConfirm" value="pass123">
+            <button id="registerBtn">Register</button>
+        </form>
+        <div id="authMessage"></div>
+        <div class="auth-tab"></div>
+        <div class="auth-tab"></div>
+    </div>
+
+    <div id="appContainer" class="app-container">
+        <div id="userEmail"></div>
+        <form id="productForm"></form>
+        <form id="customerForm"></form>
+        <form id="supplierForm"></form>
+        <form id="saleForm"></form>
+        <form id="purchaseForm"></form>
+        
+        <!-- Dashboard Elements -->
+        <div id="statSalesToday"></div>
+        <div id="statPurchasesToday"></div>
+        <div id="statProducts"></div>
+        <div id="statCustomers"></div>
+        <div id="recentTransactions"></div>
+    </div>
+
+    <!-- Modals -->
+    <div id="productModal"></div>
+    <div id="customerModal"></div>
+    <div id="supplierModal"></div>
+    <div id="saleModal"></div>
+    <div id="purchaseModal"></div>
+
+    <!-- Load App -->
+    <script src="../app.js"></script>
+
+    <script>
+        window.onload = () => {
+            const status = document.getElementById('status');
+            setTimeout(() => {
+                // Check if checkSystemIntegrity function exists (added to app.js)
+                if (typeof checkSystemIntegrity === 'function') {
+                    status.innerHTML = '<strong style="color:green">PASSED: app.js loaded and global functions defined.</strong>';
+                    
+                    // Run the check
+                    try {
+                        checkSystemIntegrity();
+                        status.innerHTML += '<br>System integrity check executed.';
+                    } catch(e) {
+                        status.innerHTML += '<br><span style="color:red">Integrity Check Failed: ' + e.message + '</span>';
+                    }
+                } else {
+                    status.innerHTML = '<strong style="color:red">FAILED: app.js did not load correctly or checkSystemIntegrity is missing.</strong>';
+                }
+            }, 500);
+        };
+    </script>
+</body>
+</html>

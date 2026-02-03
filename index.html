@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Penjualan & Pembelian - Multi User</title>
+    <meta name="description" content="Aplikasi manajemen penjualan, pembelian, dan jurnal umum dengan fitur multi-user">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        if (typeof window.supabase === 'undefined') {
+            console.warn('Primary CDN failed, trying fallback...');
+            document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');
+        }
+    </script>
+    <script src="app.js" defer></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Color Palette - Modern & Professional */
+            --primary: hsl(230, 70%, 55%);
+            --primary-dark: hsl(230, 70%, 45%);
+            --primary-light: hsl(230, 70%, 95%);
+            --secondary: hsl(280, 65%, 60%);
+            --accent: hsl(340, 75%, 60%);
+            --success: hsl(152, 69%, 45%);
+            --warning: hsl(45, 100%, 51%);
+            --danger: hsl(0, 84%, 60%);
+            --info: hsl(199, 89%, 48%);
+            
+            /* Neutrals */
+            --bg-primary: hsl(220, 25%, 10%);
+            --bg-secondary: hsl(220, 20%, 15%);
+            --bg-tertiary: hsl(220, 18%, 20%);
+            --text-primary: hsl(0, 0%, 95%);
+            --text-secondary: hsl(0, 0%, 70%);
+            --text-tertiary: hsl(0, 0%, 50%);
+            --border: hsl(220, 15%, 25%);
+            
+            /* Spacing */
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+            
+            /* Border Radius */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+            --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+            
+            /* Transitions */
+            --transition-fast: 150ms ease-in-out;
+            --transition-base: 250ms ease-in-out;
+            --transition-slow: 350ms ease-in-out;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Login Screen */
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: var(--spacing-md);
+        }
+
+        .login-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-2xl);
+            width: 100%;
+            max-width: 420px;
+            box-shadow: var(--shadow-xl);
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .login-header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .login-header p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+            transition: all var(--transition-base);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--bg-secondary);
+            border-color: var(--primary);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: hsl(152, 69%, 40%);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: hsl(0, 84%, 55%);
+            transform: translateY(-1px);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: var(--spacing-md);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: all var(--transition-base);
+        }
+
+        .auth-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-color: transparent;
+        }
+
+        /* App Container */
+        .app-container {
+            display: none;
+        }
+
+        .app-container.active {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: var(--spacing-xl);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .nav-menu {
+            flex: 1;
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            transition: all var(--transition-base);
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .user-info {
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid var(--border);
+        }
+
+        .user-email {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: var(--spacing-md);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: var(--spacing-xl);
+            overflow-y: auto;
+        }
+
+        .page-header {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .page-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-tertiary);
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        thead th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: white;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: all var(--transition-fast);
+        }
+
+        tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        tbody td {
+            padding: 1rem;
+            color: var(--text-primary);
+        }
+
+        .table-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-md);
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            transition: all var(--transition-base);
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+            transform: rotate(90deg);
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: flex-end;
+            margin-top: var(--spacing-xl);
+        }
+
+        /* Form Layouts */
+        .form-row {
+            display: grid;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .form-row-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .form-row-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success {
+            background: hsla(152, 69%, 45%, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .alert-error {
+            background: hsla(0, 84%, 60%, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .alert-info {
+            background: hsla(199, 89%, 48%, 0.1);
+            border: 1px solid var(--info);
+            color: var(--info);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            transition: all var(--transition-base);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-container.active {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .form-row-2,
+            .form-row-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-lg {
+            margin-top: var(--spacing-lg);
+        }
+
+        .mb-lg {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        /* Invoice Items */
+        .invoice-items {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .invoice-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .invoice-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .remove-item-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all var(--transition-base);
+        }
+
+        .remove-item-btn:hover {
+            background: hsl(0, 84%, 55%);
+        }
+
+        .add-item-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all var(--transition-base);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .add-item-btn:hover {
+            background: hsl(152, 69%, 40%);
+        }
+
+        .invoice-total {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--primary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            text-align: right;
+        }
+
+        .invoice-total-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .invoice-total-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: flex-end;
+        }
+
+        .filter-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>📊 Aplikasi Penjualan</h1>
+                <p>Sistem Manajemen Penjualan & Pembelian</p>
+            </div>
+
+            <div class="auth-tabs">
+                <div class="auth-tab active" onclick="switchAuthTab('login')">Login</div>
+                <div class="auth-tab" onclick="switchAuthTab('register')">Register</div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" class="form-input" placeholder="email@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+                    <span>Login</span>
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="hidden">
+                <div class="form-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" class="form-input" placeholder="email@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" class="form-input" placeholder="••••••••" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="registerPasswordConfirm">Konfirmasi Password</label>
+                    <input type="password" id="registerPasswordConfirm" class="form-input" placeholder="••••••••" required minlength="6">
+                </div>
+                <button type="submit" class="btn btn-primary" id="registerBtn">
+                    <span>Daftar</span>
+                </button>
+            </form>
+
+            <div id="authMessage" style="margin-top: 1rem;"></div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appContainer" class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="app-logo">📊 Sales Pro</div>
+            
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active" onclick="showPage('dashboard')">
+                            <span class="nav-icon">📈</span>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="showPage('products')">
+                            <span class="nav-icon">📦</span>
+                            Produk
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="showPage('customers')">
+                            <span class="nav-icon">👥</span>
+                            Pelanggan
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="showPage('suppliers')">
+                            <span class="nav-icon">🏢</span>
+                            Supplier
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="showPage('sales')">
+                            <span class="nav-icon">💰</span>
+                            Penjualan
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="showPage('purchases')">
+                            <span class="nav-icon">🛒</span>
+                            Pembelian
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="showPage('journal')">
+                            <span class="nav-icon">📓</span>
+                            Jurnal Umum
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="showPage('reports')">
+                            <span class="nav-icon">📊</span>
+                            Laporan
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="user-info">
+                <div class="user-email" id="userEmail">user@example.com</div>
+                <button class="btn btn-secondary btn-sm" onclick="handleLogout()" style="width: 100%;">
+                    Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <section id="dashboardPage" class="content-section active">
+                <div class="page-header">
+                    <h2>Dashboard</h2>
+                    <p>Overview penjualan dan pembelian</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Penjualan Hari Ini</div>
+                        <div class="stat-value" id="statSalesToday">Rp 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Pembelian Hari Ini</div>
+                        <div class="stat-value" id="statPurchasesToday">Rp 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Produk</div>
+                        <div class="stat-value" id="statProducts">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Pelanggan</div>
+                        <div class="stat-value" id="statCustomers">0</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Transaksi Terbaru</h3>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Tipe</th>
+                                    <th>No. Invoice</th>
+                                    <th>Customer/Supplier</th>
+                                    <th class="text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentTransactions">
+                                <tr>
+                                    <td colspan="5" class="text-center">Tidak ada transaksi</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Products Page -->
+            <section id="productsPage" class="content-section">
+                <div class="page-header">
+                    <h2>Produk</h2>
+                    <p>Kelola data produk Anda</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Daftar Produk</h3>
+                        <button class="btn btn-success btn-sm" onclick="openProductModal()">
+                            + Tambah Produk
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Kode</th>
+                                    <th>Nama Produk</th>
+                                    <th class="text-right">Harga Beli</th>
+                                    <th class="text-right">Harga Jual</th>
+                                    <th class="text-right">Stok</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTable">
+                                <tr>
+                                    <td colspan="6" class="text-center">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Customers Page -->
+            <section id="customersPage" class="content-section">
+                <div class="page-header">
+                    <h2>Pelanggan</h2>
+                    <p>Kelola data pelanggan Anda</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Daftar Pelanggan</h3>
+                        <button class="btn btn-success btn-sm" onclick="openCustomerModal()">
+                            + Tambah Pelanggan
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Kode</th>
+                                    <th>Nama</th>
+                                    <th>Alamat</th>
+                                    <th>Telepon</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersTable">
+                                <tr>
+                                    <td colspan="5" class="text-center">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Suppliers Page -->
+            <section id="suppliersPage" class="content-section">
+                <div class="page-header">
+                    <h2>Supplier</h2>
+                    <p>Kelola data supplier Anda</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Daftar Supplier</h3>
+                        <button class="btn btn-success btn-sm" onclick="openSupplierModal()">
+                            + Tambah Supplier
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Kode</th>
+                                    <th>Nama</th>
+                                    <th>Alamat</th>
+                                    <th>Telepon</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="suppliersTable">
+                                <tr>
+                                    <td colspan="5" class="text-center">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sales Page -->
+            <section id="salesPage" class="content-section">
+                <div class="page-header">
+                    <h2>Penjualan</h2>
+                    <p>Kelola transaksi penjualan</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Daftar Penjualan</h3>
+                        <button class="btn btn-success btn-sm" onclick="openSaleModal()">
+                            + Transaksi Baru
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>No. Invoice</th>
+                                    <th>Pelanggan</th>
+                                    <th class="text-right">Total</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salesTable">
+                                <tr>
+                                    <td colspan="5" class="text-center">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Purchases Page -->
+            <section id="purchasesPage" class="content-section">
+                <div class="page-header">
+                    <h2>Pembelian</h2>
+                    <p>Kelola transaksi pembelian</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Daftar Pembelian</h3>
+                        <button class="btn btn-success btn-sm" onclick="openPurchaseModal()">
+                            + Transaksi Baru
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>No. Invoice</th>
+                                    <th>Supplier</th>
+                                    <th class="text-right">Total</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purchasesTable">
+                                <tr>
+                                    <td colspan="5" class="text-center">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Journal Page -->
+            <section id="journalPage" class="content-section">
+                <div class="page-header">
+                    <h2>Jurnal Umum</h2>
+                    <p>Lihat catatan jurnal dari transaksi</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Jurnal Umum</h3>
+                        <button class="btn btn-success btn-sm" onclick="openJournalModal()">
+                            + Tambah Jurnal
+                        </button>
+                    </div>
+
+                    <div class="filter-section">
+                        <div class="filter-row">
+                            <div class="form-group">
+                                <label>Dari Tanggal</label>
+                                <input type="date" id="journalFromDate" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Sampai Tanggal</label>
+                                <input type="date" id="journalToDate" class="form-input">
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="filterJournal()">
+                                Filter
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Keterangan</th>
+                                    <th>Akun</th>
+                                    <th class="text-right">Debit</th>
+                                    <th class="text-right">Kredit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="journalTable">
+                                <tr>
+                                    <td colspan="5" class="text-center">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reports Page -->
+            <section id="reportsPage" class="content-section">
+                <div class="page-header">
+                    <h2>Laporan</h2>
+                    <p>Lihat berbagai laporan penjualan dan pembelian</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Laporan Penjualan</h3>
+                    </div>
+
+                    <div class="filter-section">
+                        <div class="filter-row">
+                            <div class="form-group">
+                                <label>Dari Tanggal</label>
+                                <input type="date" id="salesReportFromDate" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Sampai Tanggal</label>
+                                <input type="date" id="salesReportToDate" class="form-input">
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="generateSalesReport()">
+                                Generate
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>No. Invoice</th>
+                                    <th>Pelanggan</th>
+                                    <th class="text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salesReportTable">
+                                <tr>
+                                    <td colspan="4" class="text-center">Klik Generate untuk melihat laporan</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card mt-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">Laporan Pembelian</h3>
+                    </div>
+
+                    <div class="filter-section">
+                        <div class="filter-row">
+                            <div class="form-group">
+                                <label>Dari Tanggal</label>
+                                <input type="date" id="purchasesReportFromDate" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Sampai Tanggal</label>
+                                <input type="date" id="purchasesReportToDate" class="form-input">
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="generatePurchasesReport()">
+                                Generate
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>No. Invoice</th>
+                                    <th>Supplier</th>
+                                    <th class="text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purchasesReportTable">
+                                <tr>
+                                    <td colspan="4" class="text-center">Klik Generate untuk melihat laporan</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="productModalTitle">Tambah Produk</h3>
+                <button class="modal-close" onclick="closeProductModal()">&times;</button>
+            </div>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                <div class="form-group">
+                    <label for="productCode">Kode Produk</label>
+                    <input type="text" id="productCode" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="productName">Nama Produk</label>
+                    <input type="text" id="productName" class="form-input" required>
+                </div>
+                <div class="form-row form-row-2">
+                    <div class="form-group">
+                        <label for="productBuyPrice">Harga Beli</label>
+                        <input type="number" id="productBuyPrice" class="form-input" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="productSellPrice">Harga Jual</label>
+                        <input type="number" id="productSellPrice" class="form-input" required min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="productStock">Stok</label>
+                    <input type="number" id="productStock" class="form-input" required min="0" value="0">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeProductModal()">Batal</button>
+                    <button type="submit" class="btn btn-success">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Modal -->
+    <div id="customerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="customerModalTitle">Tambah Pelanggan</h3>
+                <button class="modal-close" onclick="closeCustomerModal()">&times;</button>
+            </div>
+            <form id="customerForm">
+                <input type="hidden" id="customerId">
+                <div class="form-group">
+                    <label for="customerCode">Kode Pelanggan</label>
+                    <input type="text" id="customerCode" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="customerName">Nama</label>
+                    <input type="text" id="customerName" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="customerAddress">Alamat</label>
+                    <textarea id="customerAddress" class="form-input" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="customerPhone">Telepon</label>
+                    <input type="text" id="customerPhone" class="form-input">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeCustomerModal()">Batal</button>
+                    <button type="submit" class="btn btn-success">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Supplier Modal -->
+    <div id="supplierModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="supplierModalTitle">Tambah Supplier</h3>
+                <button class="modal-close" onclick="closeSupplierModal()">&times;</button>
+            </div>
+            <form id="supplierForm">
+                <input type="hidden" id="supplierId">
+                <div class="form-group">
+                    <label for="supplierCode">Kode Supplier</label>
+                    <input type="text" id="supplierCode" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="supplierName">Nama</label>
+                    <input type="text" id="supplierName" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="supplierAddress">Alamat</label>
+                    <textarea id="supplierAddress" class="form-input" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="supplierPhone">Telepon</label>
+                    <input type="text" id="supplierPhone" class="form-input">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeSupplierModal()">Batal</button>
+                    <button type="submit" class="btn btn-success">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sale Modal -->
+    <div id="saleModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Transaksi Penjualan</h3>
+                <button class="modal-close" onclick="closeSaleModal()">&times;</button>
+            </div>
+            <form id="saleForm">
+                <div class="form-row form-row-2">
+                    <div class="form-group">
+                        <label for="saleDate">Tanggal</label>
+                        <input type="date" id="saleDate" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="saleInvoice">No. Invoice</label>
+                        <input type="text" id="saleInvoice" class="form-input" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="saleCustomer">Pelanggan</label>
+                    <select id="saleCustomer" class="form-input" required>
+                        <option value="">Pilih Pelanggan</option>
+                    </select>
+                </div>
+
+                <div class="invoice-items" id="saleItems">
+                    <h4 style="margin-bottom: 1rem;">Item Penjualan</h4>
+                </div>
+
+                <button type="button" class="add-item-btn" onclick="addSaleItem()">+ Tambah Item</button>
+
+                <div class="invoice-total">
+                    <div class="invoice-total-label">Total</div>
+                    <div class="invoice-total-value" id="saleTotal">Rp 0</div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeSaleModal()">Batal</button>
+                    <button type="submit" class="btn btn-success">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Purchase Modal -->
+    <div id="purchaseModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Transaksi Pembelian</h3>
+                <button class="modal-close" onclick="closePurchaseModal()">&times;</button>
+            </div>
+            <form id="purchaseForm">
+                <div class="form-row form-row-2">
+                    <div class="form-group">
+                        <label for="purchaseDate">Tanggal</label>
+                        <input type="date" id="purchaseDate" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="purchaseInvoice">No. Invoice</label>
+                        <input type="text" id="purchaseInvoice" class="form-input" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="purchaseSupplier">Supplier</label>
+                    <select id="purchaseSupplier" class="form-input" required>
+                        <option value="">Pilih Supplier</option>
+                    </select>
+                </div>
+
+                <div class="invoice-items" id="purchaseItems">
+                    <h4 style="margin-bottom: 1rem;">Item Pembelian</h4>
+                </div>
+
+                <button type="button" class="add-item-btn" onclick="addPurchaseItem()">+ Tambah Item</button>
+
+                <div class="invoice-total">
+                    <div class="invoice-total-label">Total</div>
+                    <div class="invoice-total-value" id="purchaseTotal">Rp 0</div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closePurchaseModal()">Batal</button>
+                    <button type="submit" class="btn btn-success">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Journal Modal -->
+    <div id="journalModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Input Jurnal Umum</h3>
+                <button class="modal-close" onclick="closeJournalModal()">&times;</button>
+            </div>
+            <form id="journalForm">
+                <div class="form-group">
+                    <label for="journalDate">Tanggal</label>
+                    <input type="date" id="journalDate" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="journalDesc">Keterangan</label>
+                    <input type="text" id="journalDesc" class="form-input" placeholder="Contoh: Biaya Listrik" required>
+                </div>
+                <div class="form-group">
+                    <label for="journalAccount">Akun</label>
+                    <select id="journalAccount" class="form-input" required>
+                        <option value="">Pilih Akun</option>
+                    </select>
+                </div>
+                <div class="form-row form-row-2">
+                    <div class="form-group">
+                        <label for="journalDebit">Debit</label>
+                        <input type="number" id="journalDebit" class="form-input" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="journalCredit">Kredit</label>
+                        <input type="number" id="journalCredit" class="form-input" min="0" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeJournalModal()">Batal</button>
+                    <button type="submit" class="btn btn-success">Simpan Jurnal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App scripts moved to head with defer -->
+</body>
+</html>
